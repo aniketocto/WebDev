@@ -2,60 +2,59 @@ let highestZ = 1;
 
 class Paper {
   holdingPaper = false;
-  prevMouseX = 0;
-  prevMouseY = 0;
+  prevX = 0;
+  prevY = 0;
 
-  mouseX = 0;
-  mouseY = 0;
+  currentX = 0;
+  currentY = 0;
 
-  velocityX = 0;
-  velocityY = 0;
-
-  currentPaperX = 0;
-  currentPaperY = 0;
-
-  init(paper) {
-    paper.addEventListener("mousedown", (e) => {
-      this.holdingPaper = true;
-
-      paper.style.zIndex = highestZ;
-      highestZ += 1;
-
-      if (e.button === 0) {
-        this.prevMouseX = this.mouseX;
-        this.prevMouseY = this.mouseY;
-
-        console.log(this.prevMouseX);
-        console.log(this.prevMouseY);
-      }
+  constructor(paper) {
+    this.paper = paper;
+    this.paper.addEventListener("mousedown", this.onPointerDown.bind(this));
+    this.paper.addEventListener("touchstart", this.onPointerDown.bind(this), {
+      passive: false,
     });
-    paper.addEventListener("mousemove", (e) => {
-      this.mouseX = e.clientX;
-      this.mouseY = e.clientY;
-
-      this.velocityX = this.mouseX - this.prevMouseX;
-      this.velocityY = this.mouseY - this.prevMouseY;
-
-      if (this.holdingPaper) {
-        this.currentPaperX += this.velocityX;
-        this.currentPaperY += this.velocityY;
-
-        this.prevMouseX = this.mouseX;
-        this.prevMouseY = this.mouseY;
-
-        paper.style.transform = `translateX(${this.currentPaperX}px) translateY(${this.currentPaperY}px)`;
-      }
+    window.addEventListener("mousemove", this.onPointerMove.bind(this));
+    window.addEventListener("touchmove", this.onPointerMove.bind(this), {
+      passive: false,
     });
+    window.addEventListener("mouseup", this.onPointerUp.bind(this));
+    window.addEventListener("touchend", this.onPointerUp.bind(this));
+  }
 
-    window.addEventListener("mouseup", (e) => {
-      this.holdingPaper = false;
-    });
+  onPointerDown(e) {
+    e.preventDefault(); // Prevent default touch event behavior
+    this.holdingPaper = true;
+    this.paper.style.zIndex = highestZ;
+    highestZ += 1;
+    const event = e.changedTouches ? e.changedTouches[0] : e;
+    this.prevX = event.clientX;
+    this.prevY = event.clientY;
+  }
+
+  onPointerMove(e) {
+    if (this.holdingPaper) {
+      e.preventDefault(); // Prevent default touch event behavior
+      const event = e.changedTouches ? e.changedTouches[0] : e;
+      const clientX = event.clientX;
+      const clientY = event.clientY;
+      const velocityX = clientX - this.prevX;
+      const velocityY = clientY - this.prevY;
+      this.currentX += velocityX;
+      this.currentY += velocityY;
+      this.prevX = clientX;
+      this.prevY = clientY;
+      this.paper.style.transform = `translateX(${this.currentX}px) translateY(${this.currentY}px)`;
+    }
+  }
+
+  onPointerUp() {
+    this.holdingPaper = false;
   }
 }
 
 const papers = Array.from(document.querySelectorAll(".paper"));
 
 papers.forEach((paper) => {
-  const p = new Paper();
-  p.init(paper);
+  const p = new Paper(paper);
 });
